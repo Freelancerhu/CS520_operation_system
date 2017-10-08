@@ -8,8 +8,11 @@ Date：10/05/2017
 #include <set>
 #include <cmath>
 #include <algorithm>
+#include <fstream>
 using namespace std;
 /*
+ * In this program, I stored all data in the file "data.txt". When the main function executes, the program readed in all data,
+ * then store them into parameters.
  * First, I define a Event class. which contains information of waiting queue of each bus stop, the state of event, current time,
  * the number of bus and the number of stop.
  */
@@ -17,17 +20,31 @@ class Event {
 private:
     static vector<queue<int>> busStop;  // Contains the waiting queue of each bus stop. It is static because every event share it.
     char state = 'a';   // Stores state(person, arrival and boarder) of each event.
-    int curTime = 0;    // Stores current time.
+    double curTime = 0;    // Stores current time.
     int noOfBus = 0;    // Stores number of bus.
     int noOfStop = 0;   // Stores number of bus station.
+    static vector<int> busPosition; // Stores position of bus.
 public:
     // constructor of Event class.
-    Event (char eventName, int Time, int Bus, int Stop) {
+    Event (char eventName, double Time, int Bus, int Stop) {
         state = eventName;
         curTime = Time;
         noOfBus = Bus;
         noOfStop = Stop;
     }
+    //  set the position of bus
+    void setBusPosition(int bus, int stop) {
+        busPosition[bus] = stop;
+    }
+    // return the vector which contains position of buses
+    vector<int> busPos () {
+        return busPosition;
+    }
+    // return the vector which contains queue of every stop.
+    vector<queue<int>> personSum() {
+        return busStop;
+    }
+
     // Set the number of bus stop to i.
     void setBusStopNum(int t) {
         for (int i = 0; i < t; ++i) {
@@ -58,7 +75,7 @@ public:
         return state;
     }
     // returns time of event.
-    int getCurTime () const {
+    double getCurTime () const {
         return curTime;
     }
     // returns the number of bus of event.
@@ -72,6 +89,8 @@ public:
 
 };
 vector<queue<int>> Event::busStop;
+vector<int> Event::busPosition = {0, 3, 6, 9, 12};
+
 // the function of Exponentially Distributed Pseudo-Random Numbers.
 double random (int &sd) {
     double x = 0;
@@ -87,14 +106,17 @@ double random (int &sd) {
 int main() {
     // stores Events.
     vector<Event> mainSet;
+    ifstream infile("data.txt");
     int seed = 1000;
     int driveTime = 300;
     int numOfStop = 15;
     int numOfBus = 5;
     int meanArrivalRate = 2;
     int boardingTime = 3;
-    int timeToStop = 9999;
-    int currentTimeIs = 0;
+    int timeToStop = 3600;
+    // read in data and store into parameters.
+    infile >> seed >> driveTime >> numOfStop >> numOfBus >> meanArrivalRate >> boardingTime >> timeToStop;
+    double currentTimeIs = 0;
     // the buses distributed uniformly along the route (by generating appropriate arrival events)
     for (int i = 0, j = 0; i < numOfBus; ++i, j += 3) {
         Event busA('a', currentTimeIs, i, j);
@@ -126,7 +148,7 @@ int main() {
         Event nextEvent = mainSet[0];
         mainSet.erase(mainSet.begin());
         char state = nextEvent.getState();
-        int clock = nextEvent.getCurTime();
+        double clock = nextEvent.getCurTime();
         currentTimeIs = clock;
         int bus = nextEvent.getBusNumber();
         int stop = nextEvent.getStopNumber();
@@ -139,7 +161,9 @@ int main() {
                 break;
             }
             case 'a' : {
-                cout <<"b = " << bus << " s = " << stop << endl;
+//                vector<queue<int>> tempPerson = nextEvent.personSum();
+//                cout << tempPerson[14].size() << endl;
+                nextEvent.setBusPosition(bus, stop);
                 if (nextEvent.checkQueue(stop)) {
                     if (stop == 14) stop = 0;
                     else stop += 1;
@@ -166,13 +190,7 @@ int main() {
                 break;
             }
         }
-
     } while (currentTimeIs <= timeToStop);
-
-    Event ttt('p', currentTimeIs, -1, 1);
-    ttt.showData();
-
-
     return 0;
 
 }
